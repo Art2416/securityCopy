@@ -1,72 +1,132 @@
-var apimock = apimock;
+var Pintado = false;
+var point = [];
+var bpname = "";
 
-var app = (function (){
-    var author;
-    var blueprintName;
+var app = (function(){
 
-    function getName() {
-            $("#name").text(author + "'s " + "blueprints:");
+    // Input of the author name
+    var newAuthorName;
+    var bandera = false;
+
+    // Get the apiclient or the apimock module
+    var module = apiclient;
+
+
+    // Get elements
+    var table = document.getElementById("tableBluePrints");
+    var button = document.getElementById("authorNameButton");
+    var currentBluePrint = document.getElementById("currentBluePrintName");
+    var authorNameH = document.getElementById("authorName");
+    var canvas = document.getElementById("canvas");
+
+    // Click button listener
+    button.addEventListener("click", function(){
+        newAuthorName = document.getElementById("inputName").value;
+        // Clear the table
+        clearData();
+        // Update de author information
+        updateName(newAuthorName);
+        module.getBluePrintsByAuthor(newAuthorName);
+    });
+
+    // Updates the author name
+    function updateName(newNameValue){
+        if (newNameValue == "") {
+            newNameValue = "All Blue prints";
         }
+        authorNameH.innerHTML = newNameValue;
+    }
 
-     function getNameAuthorBlueprints() {
-        author = $("#author").val();
-        apimock.getBlueprintsByAuthor(author,authorData);
+    // Reset the author information
+    function clearData(){
+        var size = table.rows.length;
+        for(var x=size-1; x > 0; x--){
+            table.deleteRow(x);
+        }
+    }
 
-     }
+    function initMouse () {
+        		console.info('initialized');
+        		var canvas = document.getElementById("canvas"),
+        			context = canvas.getContext("2d");
 
-     var authorData = function( data) {
-         $("#table tbody").empty();
-         if (data === undefined) {
-             alert("No existe el autor");
-             $("#name").empty();
-             $("#points").text("Total Points");
-             $("#nameblu").empty();
-         } else {
-             getName();
-             const datanew = data.map((elemento) => {
-                 return {
-                     name: elemento.name,
-                     puntos: elemento.points.length
-                 }
-             });
+                var draw = Draw();
 
-             datanew.map((elementos) => {
-                 $("#table > tbody:last").append($("<tr><td>" + elementos.name + "</td><td>" + elementos.puntos.toString() +
-                     "</td><td>" + "<button  id=" + elementos.name + " onclick=app.getBlueprintByAuthorAndName(this)>open</button>" + "</td>"));
-             });
+        		if (window.PointerEvent) {
+        			canvas.addEventListener("pointerdown", Draw, false);
+        		}
+    }
 
-             const totalPuntos = datanew.reduce((suma, {puntos}) => suma + puntos, 0);
+    function Draw () {
+        if(Pintado){
+                console.info("Entrar a pintado")
+        		var canvas = document.getElementById("canvas"),
+        			context = canvas.getContext("2d");
+        		var offsetleft = parseInt(getOffset(canvas).left, 10);
+        		var offsettop = parseInt(getOffset(canvas).top, 10);
+        		var x = event.pageX - offsetleft;
+        		var y = event.pageY - offsettop;
+        		var cordenadas = { "x": x, "y": y };
+        		point.push(cordenadas)
+        		module.getBlueprintsByNameAndAuthor(newAuthorName, bpname);
+        	}
+    }
 
-             $("#points").text("Total user points: " + totalPuntos);
-            }
-         }
+    function getOffset (obj) {
+    		var offsetLeft = 0;
+    		var offsetTop = 0;
+    		do {
+    			if (!isNaN(obj.offsetLeft)) {
+    				offsetLeft += obj.offsetLeft;
+    			}
+    			if (!isNaN(obj.offsetTop)) {
+    				offsetTop += obj.offsetTop;
+    			}
+    		} while (obj = obj.offsetParent);
+    		return { left: offsetLeft, top: offsetTop };
+    }
 
-         function getBlueprintByAuthorAndName(data) {
-                 author = $("#author").val();
-                 blueprintName = data.id;
-                 $("#nameblu").text("Current blueprint: " + blueprintName);
-                 apimock.getBlueprintByAuthorAndName(author, blueprintName, canvasDraw);
-             }
+    // Draw the current blueprint in the canvas
+    function drawBlueprint(bluePrintName){
+        currentBluePrint.innerHTML = "Current Blueprint: " + bluePrintName;
+        bpname = bluePrintName;
+        point = [];
+        var context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        module.getBlueprintsByNameAndAuthor(newAuthorName, bluePrintName);
+    }
 
-         function canvasDraw(data) {
-                 const puntos = data.points;
-                 var c = document.getElementById("myCanvas");
-                 var ctx = c.getContext("2d");
-                 ctx.clearRect(0, 0, c.width, c.height);
-                 ctx.restore();
-                 ctx.beginPath();
-                 for (let i = 1; i < puntos.length; i++) {
-                     ctx.moveTo(puntos[i - 1].x, puntos[i - 1].y);
-                     ctx.lineTo(puntos[i].x, puntos[i].y);
-                     if (i === puntos.length - 1) {
-                         ctx.moveTo(puntos[i].x, puntos[i].y);
-                         ctx.lineTo(puntos[0].x, puntos[0].y);
-                     }
-                 }
-                 ctx.stroke();
-             }
-     return{
-        getBlueprintByAuthorAndName:getBlueprintByAuthorAndName,
-        getNameAuthorBlueprints: getNameAuthorBlueprints
-     }
+
+    function updateBluePrints(){
+        module.putBluePrint(newAuthorName, bpname);
+    }
+
+    function refresh(){
+        clearData();
+        updateName(newAuthorName);
+        module.getBluePrintsByAuthor(newAuthorName);
+    }
+
+    function createNewBp(){
+        result = window.prompt("Ingrese el nombre del nuevo plano", "Default name");
+        bpname = result;
+        module.postBluePrint(newAuthorName, result);
+    }
+
+    function deleteBp(){
+        module.deleteBluePrint(newAuthorName, bpname);
+        currentBluePrint.innerHTML = "Current Blueprint: ";
+        var context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    return{
+        draw:drawBlueprint,
+        initMouse: initMouse,
+        update: updateBluePrints,
+        reload: refresh,
+        createBp: createNewBp,
+        delete: deleteBp
+    };
+
 })();

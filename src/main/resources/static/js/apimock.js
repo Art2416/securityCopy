@@ -19,20 +19,26 @@ apimock=(function(){
     mockdata["david"]=	[{author:"david","points":[{"x":180,"y":150},{"x":115,"y":120}],"name":"test1"}]
 	mockdata["stefania"]=	[{author:"stefania","points":[{"x":18,"y":15},{"x":195,"y":140}],"name":"test2"}]
 	return {
+    		getBlueprintsByAuthor:function(authname,callback){
+    			callback(
+    				mockdata[authname]
+    			);
+    		},
 
-		getBlueprintsByAuthor:function(authname,callback){
+    		getBlueprintsByNameAndAuthor:function(authname,bpname,callback){
 
-			callback(
-				mockdata[authname]
-			);
-		},
+    			callback(
+    				mockdata[authname].find(function(e){return e.name===bpname})
+    			);
+    		}
+    	}
 
-		getBlueprintByAuthorAndName:function(authname,bpname,callback){
+    })();
 
-			callback(
-				mockdata[authname].find(function(e){return e.name===bpname})
-			);
-		}
-	}
-
-})();
+    /*
+    Example of use:
+    var fun=function(list){
+    	console.info(list);
+    }
+    apimock.getBlueprintsByAuthor("johnconnor",fun);
+    apimock.getBlueprintsByNameAndAuthor("johnconnor","house",fun);*/
